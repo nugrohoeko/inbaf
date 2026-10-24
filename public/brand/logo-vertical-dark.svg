@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" role="img" aria-labelledby="title">
+  <title id="title">INBAF Indonesian Language Assessment</title>
+  <defs>
+    <linearGradient id="emerald-lime-v" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#BEF78F"/>
+      <stop offset="1" stop-color="#A9D99D"/>
+    </linearGradient>
+  </defs>
+  <!-- Speech bubble icon -->
+  <rect x="75" y="13" width="70" height="65" rx="20" fill="url(#emerald-lime-v)"/>
+  <!-- Bubble tail -->
+  <path d="m86 72-2 17 23-17" fill="#BEF78F"/>
+  <!-- Sound wave lines -->
+  <path d="M88 33c9-3 15 0 22 4 7-4 13-7 22-4v28c-9-2-15 0-22 4-7-4-13-6-22-4V33Zm22 4v28" fill="none" stroke="#092522" stroke-width="3.5" stroke-linejoin="round"/>
+  <!-- INBAF wordmark -->
+  <text x="110" y="137" text-anchor="middle" font-family="'Inter','Segoe UI',Arial,sans-serif" font-weight="800" font-size="43" letter-spacing="-1.5" fill="#E8F1EB">INBAF</text>
+  <!-- Subtitle -->
+  <text x="110" y="161" text-anchor="middle" font-family="'Inter','Segoe UI',Arial,sans-serif" font-size="10" letter-spacing="1.7" fill="#A9D99D">INDONESIAN LANGUAGE</text>
+  <text x="110" y="177" text-anchor="middle" font-family="'Inter','Segoe UI',Arial,sans-serif" font-size="10" letter-spacing="2.3" fill="#A9D99D">ASSESSMENT PLATFORM</text>
+</svg>

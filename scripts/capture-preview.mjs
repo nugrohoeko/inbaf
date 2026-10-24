@@ -1,0 +1,72 @@
+import {chromium} from '@playwright/test';
+import fs from 'node:fs';
+const source=fs.readFileSync('.env','utf8');
+const setting=(key)=>source.match(new RegExp('^'+key+'=(.*)$','m'))?.[1].trim().replace(/^"|"$/g,'');
+const browser=await chromium.launch({executablePath:process.env.INBAF_CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--disable-background-networking']});
+const context=await browser.newContext({viewport:{width:1440,height:1000}});
+await context.addInitScript(()=>{localStorage.setItem('inbaf-language','en');localStorage.setItem('inbaf-theme','light');});
+const page=await context.newPage();
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const waitForMetrics=()=>page.waitForFunction(()=>{
+    const metrics=[...document.querySelectorAll('.metric-value')];
+    return metrics.length===4&&metrics.every(node=>node.textContent.trim()!=='…');
+});
+const hasOverflow=()=>page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+async function checkFileChooser(button){
+    const [chooser]=await Promise.all([page.waitForEvent('filechooser'),button.click()]);
+    await chooser.setFiles([]);
+    return true;
+}
+fs.mkdirSync('tmp/browser-preview',{recursive:true});
+await page.goto('http://127.0.0.1:8001/',{waitUntil:'networkidle'});
+await page.screenshot({path:'tmp/browser-preview/landing-desktop.png',fullPage:true});
+await page.goto('http://127.0.0.1:8001/login',{waitUntil:'networkidle'});
+await page.locator('input[type=email]').fill(setting('INBAF_ADMIN_EMAIL')||'admin@inbaf.test');
+await page.locator('.password-input input').fill(setting('INBAF_ADMIN_PASSWORD'));
+await page.locator('.stack-form > button').click();
+await page.waitForURL('**/dashboard');await waitForMetrics();await page.waitForLoadState('networkidle');
+await page.waitForTimeout(1200); // Let chart animations settle before capturing evidence.
+await page.screenshot({path:'tmp/browser-preview/dashboard-desktop.png',fullPage:true});
+const downloads=[];
+for(const kind of ['template','export']){
+    const response=await context.request.get('http://127.0.0.1:8001/api/admin/questions/'+kind+'?format=xlsx');
+    const bytes=await response.body();
+    const valid=response.status()===200&&bytes.subarray(0,2).toString()==='PK';
+    downloads.push({kind,status:response.status(),xlsx:valid});
+    if(!valid)throw new Error('Invalid XLSX '+kind+' download');
+}
+const report=await context.request.get('http://127.0.0.1:8001/api/admin/reports?date_to='+new Date().toISOString().slice(0,10));
+if(report.status()!==200)throw new Error('Until-only report failed: '+report.status());
+await page.goto('http://127.0.0.1:8001/admin/questions',{waitUntil:'networkidle'});
+const questionLayout=await page.evaluate(()=>({viewport:innerWidth,width:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].map(node=>({tag:node.tagName,class:typeof node.className==='string'?node.className:'',right:Math.round(node.getBoundingClientRect().right),width:Math.round(node.getBoundingClientRect().width)})).filter(node=>node.right>innerWidth+1).slice(0,12)}));
+await page.screenshot({path:'tmp/browser-preview/questions-desktop.png',fullPage:true});
+const importChooser=await checkFileChooser(page.locator('.heading-actions button').filter({hasText:/Import/}));
+await page.setViewportSize({width:390,height:844});
+const questionOverflow390=await hasOverflow();
+await page.screenshot({path:'tmp/browser-preview/questions-mobile.png',fullPage:true});
+await page.setViewportSize({width:320,height:740});
+const questionOverflow320=await hasOverflow();
+await page.setViewportSize({width:1440,height:1000});
+await page.goto('http://127.0.0.1:8001/admin/media',{waitUntil:'networkidle'});
+const uploadChooser=await checkFileChooser(page.locator('.heading-actions button').filter({hasText:/Upload/}));
+const mediaOverflow=await hasOverflow();
+await page.setViewportSize({width:390,height:844});
+await page.goto('http://127.0.0.1:8001/dashboard',{waitUntil:'networkidle'});
+await waitForMetrics();
+await page.waitForTimeout(1200);
+await page.screenshot({path:'tmp/browser-preview/dashboard-mobile.png',fullPage:true});
+const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+await page.setViewportSize({width:320,height:740});
+const overflow320=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+const fresh=await browser.newContext();
+const freshPage=await fresh.newPage();
+await freshPage.goto('http://127.0.0.1:8001/',{waitUntil:'networkidle'});
+const bootstrap=await (await fresh.request.get('http://127.0.0.1:8001/api/bootstrap')).json();
+const identity=await freshPage.evaluate(()=>({locale:document.documentElement.lang,title:document.title}));
+if(identity.locale!==bootstrap.settings.default_locale||!identity.title.startsWith(bootstrap.settings.system_name+' ·'))throw new Error('Configured page identity was not applied');
+const previewReport={errors,mobileOverflow:overflow,mobile320Overflow:overflow320,questionLayout,questionOverflow390,questionOverflow320,mediaOverflow,importChooser,uploadChooser,downloads,reportStatus:report.status(),identity,artifacts:'tmp/browser-preview'};
+fs.writeFileSync('tmp/browser-preview/report.json',JSON.stringify(previewReport,null,2)+'\n');
+console.log(JSON.stringify(previewReport));
+if(errors.length||overflow||overflow320||questionLayout.width>questionLayout.viewport||questionOverflow390||questionOverflow320||mediaOverflow)throw new Error('Preview found a browser or layout error');
+await fresh.close();
+await browser.close();

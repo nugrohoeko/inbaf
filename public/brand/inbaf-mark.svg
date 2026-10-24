@@ -1,0 +1,12 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="emerald-lime-mark" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#BEF78F"/>
+      <stop offset="1" stop-color="#A9D99D"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="42" height="39" rx="12" fill="#092522"/>
+  <rect x="9" y="8" width="30" height="26" rx="8" fill="url(#emerald-lime-mark)"/>
+  <path d="M16 16c4-1.5 7 0 9 1.5 3-1.5 6-3 9-1.5v12c-4-.8-7 0-9 1.5-3-1.5-6-2.2-9-1.5V16Zm9 1.5v12" fill="none" stroke="#092522" stroke-width="2" stroke-linejoin="round"/>
+  <path d="m12 34-1 6 9-6" fill="#BEF78F"/>
+</svg>

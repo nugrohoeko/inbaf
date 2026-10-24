@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-labelledby="title">
+  <title id="title">INBAF</title>
+  <defs>
+    <linearGradient id="emerald-lime-app" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#BEF78F"/>
+      <stop offset="1" stop-color="#A9D99D"/>
+    </linearGradient>
+  </defs>
+  <!-- Dark emerald background -->
+  <rect width="192" height="192" rx="44" fill="#092522"/>
+  <!-- Speech bubble with lime gradient -->
+  <rect x="35" y="35" width="122" height="110" rx="28" fill="url(#emerald-lime-app)"/>
+  <!-- Bubble tail -->
+  <path d="m50 130-3 31 38-29" fill="#BEF78F"/>
+  <!-- Sound wave lines -->
+  <path d="M58 64c15-5 27 0 38 6 11-6 23-11 38-6v47c-15-3-27 0-38 7-11-7-23-10-38-7V64Zm38 6v48" fill="none" stroke="#092522" stroke-width="6" stroke-linejoin="round"/>
+</svg>

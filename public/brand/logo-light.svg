@@ -1,0 +1,16 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 48" fill="none">
+  <defs>
+    <linearGradient id="emerald-forest" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#193C31"/>
+      <stop offset="1" stop-color="#092522"/>
+    </linearGradient>
+  </defs>
+  <!-- Speech bubble icon -->
+  <path d="M5 6h25a10 10 0 0 1 10 10v14a10 10 0 0 1-10 10H17l-9 7V36a10 10 0 0 1-6-9V16A10 10 0 0 1 5 6" fill="url(#emerald-forest)"/>
+  <!-- Sound wave lines inside bubble -->
+  <path d="M11 17c5-2 9 0 11 2 3-2 7-4 11-2v13c-4-1-8 0-11 2-3-2-7-3-11-2V17Z" stroke="#BEF78F" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M22 19v13" stroke="#BEF78F" stroke-width="2"/>
+  <path d="M14 23h4m8 0h4m-16 4h4m8 0h4" stroke="#BEF78F" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- INBAF wordmark -->
+  <text x="52" y="34" font-family="'Inter','Segoe UI',Arial,sans-serif" font-weight="800" font-size="32" letter-spacing="-1.5" fill="#092522">INBAF</text>
+</svg>

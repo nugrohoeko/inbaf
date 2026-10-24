@@ -1,0 +1,250 @@
+@import 'tailwindcss';
+@import './workspace.css';
+@import './public.css';
+@import './assessment.css';
+@source '../views/**/*.blade.php';
+@source '../js/**/*.vue';
+
+/* INBAF Global Design System - Dark Emerald & Lime Green Theme */
+:root {
+    /* Core Palette - Light Mode */
+    --color-primary: #BEF78F;
+    --color-primary-hover: #A9E879;
+    --color-background: #F7F9FC;
+    --color-surface: #FFFFFF;
+    --color-surface-elevated: #F0F4F1;
+    --color-text-primary: #1A2B25;
+    --color-text-secondary: #5A6E64;
+    --color-border: #D8E3DC;
+    --color-accent: #193C31;
+    
+    /* Semantic Colors */
+    --color-success: #4ADE80;
+    --color-warning: #FBBF24;
+    --color-danger: #EF4444;
+    --color-info: #3B82F6;
+
+    /* Legacy Variable Mapping for Backwards Compatibility */
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+    color: var(--color-text-primary);
+    background: var(--color-background);
+    font-synthesis: none;
+    --bg: var(--color-background);
+    --surface: var(--color-surface);
+    --surface-alt: var(--color-surface-elevated);
+    --text: var(--color-text-primary);
+    --heading: #092522;
+    --muted: var(--color-text-secondary);
+    --border: var(--color-border);
+    --blue: #193C31; /* Replacing blue with Forest Green for accents */
+    --blue-soft: #E8F1EB;
+    --sidebar: 260px;
+    --shadow: 0 8px 30px rgba(9, 37, 34, 0.06);
+    font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 360px; }
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { outline-offset: 4px; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; border: 0; background: none; color: inherit; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+a { text-decoration: none; color: inherit; }
+h1, h2, h3, h4, p { margin: 0; }
+h1, h2, h3, h4 { color: var(--heading); }
+button svg, a svg { flex-shrink: 0; }
+img { max-width: 100%; }
+
+/* Dark Mode - Dark Emerald Theme */
+.dark {
+    color-scheme: dark;
+    --color-background: #092522;
+    --color-surface: #102F27;
+    --color-surface-elevated: #193C31;
+    --color-text-primary: #E8F1EB;
+    --color-text-secondary: #B5C9BE;
+    --color-border: #35574A;
+    --color-accent: #BEF78F;
+    
+    --bg: var(--color-background);
+    --surface: var(--color-surface);
+    --surface-alt: var(--color-surface-elevated);
+    --text: var(--color-text-primary);
+    --heading: #F0FFF4;
+    --muted: var(--color-text-secondary);
+    --border: var(--color-border);
+    --blue: #BEF78F; /* Lime Green for dark mode accents */
+    --blue-soft: rgba(190, 247, 143, 0.12);
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+.dark body { background: var(--bg); color: var(--text); }
+
+/* Button System - Lime Green Primary */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #BEF78F;
+    border: 1px solid transparent;
+    color: #092522;
+    min-height: 42px;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 650;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.button:hover {
+    background: #A9E879;
+    box-shadow: 0 4px 15px rgba(190, 247, 143, 0.3);
+    transform: translateY(-1px);
+}
+.button:disabled:hover { transform: none; box-shadow: none; }
+.button.white { background: #fff; color: #092522; box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+.button.white:hover { background: #F0FFF4; }
+.button.secondary { 
+    color: var(--text-primary); 
+    background: var(--surface); 
+    border-color: var(--border); 
+}
+.button.secondary:hover { 
+    background: var(--blue-soft); 
+    color: var(--blue); 
+    border-color: transparent; 
+}
+.button.small { min-height: 34px; padding: 8px 14px; font-size: 0.9375rem; gap: 6px; }
+.button.large { min-height: 50px; padding: 14px 24px; font-size: 1.0625rem; }
+.button.full { width: 100%; }
+.button.danger { background: #EF4444; color: #fff; }
+.button.danger:hover { background: #DC2626; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    color: var(--muted);
+    transition: all 0.2s;
+}
+.icon-button:hover { background: var(--blue-soft); color: var(--blue); }
+
+.text-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--blue);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+.text-button:hover { color: var(--color-primary); }
+
+.language-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    min-height: 36px;
+}
+
+/* Eyebrow & Labels */
+.eyebrow {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1.75px;
+    margin-bottom: 11px;
+    text-transform: uppercase;
+}
+
+.eyebrow > span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--blue);
+}
+
+.tiny-dot {
+    width: 6px;
+    height: 6px;
+    background: #BEF78F;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Metric & Package Icons */
+.metric-icon,
+.package-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(190, 247, 143, 0.12);
+    color: #BEF78F;
+}
+
+/* Color Badges */
+.blue { background: rgba(190, 247, 143, 0.15); color: #BEF78F; }
+.purple { background: rgba(168, 85, 247, 0.15); color: #A855F7; }
+.cyan { background: rgba(34, 211, 238, 0.15); color: #22D3EE; }
+.amber { background: rgba(251, 191, 36, 0.15); color: #FBBF24; }
+.green { background: rgba(74, 222, 128, 0.15); color: #4ADE80; }
+.red { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
+.neutral { background: rgba(181, 201, 190, 0.15); color: #B5C9BE; }
+
+.dark .blue,
+.dark .purple,
+.dark .cyan,
+.dark .amber,
+.dark .green,
+.dark .red,
+.dark .neutral {
+    background: var(--surface-alt);
+}
+
+/* Badge Component */
+.badge {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    white-space: nowrap;
+    border-radius: 6px;
+    padding: 4px 10px;
+    line-height: 1.3;
+}
+
+/* Panel Component */
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.panel-heading {
+    padding: 21px 23px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
