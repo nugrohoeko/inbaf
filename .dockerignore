@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+!.env.example
+.local-access.txt
+node_modules
+vendor
+tmp
+test-results
+playwright-report
+storage/logs/*
+storage/app/private/*
+bootstrap/cache/*.php
+public/hot
