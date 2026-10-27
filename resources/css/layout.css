@@ -175,6 +175,7 @@ tbody tr:hover { background: color-mix(in srgb,var(--surface-alt) 55%,transparen
     :root .topbar { gap: 8px; padding-block: 12px; }
     :root .breadcrumb { flex-basis: auto; }
     :root .topbar-actions { width: 100%; justify-content: space-between; gap: 4px; }
+    .topbar-actions .portal-home-link { flex-basis: 100%; grid-column: 1/-1; }
     .topbar-actions .text-size-control { max-width: calc(100% - 160px); }
     .topbar-actions .text-size-control select { width: 100%; min-width: 0; }
     .topbar-divider { display: none; }

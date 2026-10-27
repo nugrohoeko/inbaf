@@ -11,7 +11,7 @@ Endpoint akun tersebut juga melayani peserta aktif pada akun miliknya sendiri. P
 | `GET /api/admin/test-types` | Superadmin | Semua jenis dan kebijakan |
 | `PUT /api/admin/test-types/{code}` | Superadmin | Kebijakan, skala, metode dan `level_thresholds` |
 | `GET /api/admin/questions/{id}/usage` | Superadmin | Riwayat penggunaan berpaginasi |
-| `PUT /api/preferences` | Login | `text_size`: `normal`, `large`, `extra_large`; peserta juga dapat mengirim `preferred_language`: `id`, `en` |
+| `PUT /api/preferences` | Login | `text_size`: `small`, `normal`, `large`, `extra_large`; peserta juga dapat mengirim `preferred_language`: `id`, `en` |
 | `GET /api/results/{attempt}/placement-report` | Pemilik/Superadmin | PDF penempatan hasil final |
 
 Paket admin mendukung `test_type`, `policy_overrides`, `sections[].difficulties`; soal mendukung `allowed_test_types`, `confidential`, `usage_limit`. Penghitung `usage_count` hanya diubah server. Detail hasil menyediakan `review_answers` menurut snapshot. Sesi tanpa timer mengembalikan `expires_at`/`remaining_seconds` null dan `rules.timer_enabled=false`. Endpoint events menyediakan jumlah perpindahan tab, ambang, dan `limit_exceeded` bila pemantauan aktif.

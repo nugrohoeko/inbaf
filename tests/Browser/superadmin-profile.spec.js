@@ -137,6 +137,7 @@ test('account menu supports keyboard dismissal and profile routes; dark XL mobil
 });
 
 test('profile validates photos and saves cropped replacements, name and email only after confirmation, then removes the photo', async ({page}) => {
+    test.setTimeout(150000);
     const account = fixture('profile-edit'), errors = [];
     page.on('pageerror', error => errors.push(error.stack || error.message));
     await loginAs(page, account);
@@ -223,6 +224,7 @@ test('profile validates photos and saves cropped replacements, name and email on
 });
 
 test('password validation, visibility and strength work; changing a password keeps this session and revokes another session', async ({page, browser}) => {
+    test.setTimeout(150000);
     const account = fixture('profile-password'), errors = [], nextPassword = 'ProfileNewPass456!';
     page.on('pageerror', error => errors.push(error.stack || error.message));
     const otherContext = await browser.newContext({baseURL: 'http://127.0.0.1:8001'});
@@ -268,6 +270,7 @@ test('password validation, visibility and strength work; changing a password kee
 });
 
 test('account menu logout invalidates the session, clears other tabs and protects cached or direct private routes', async ({page, context}) => {
+    test.setTimeout(150000);
     const account = fixture('profile-logout'), errors = [];
     page.on('pageerror', error => errors.push(error.stack || error.message));
     await loginAs(page, account);

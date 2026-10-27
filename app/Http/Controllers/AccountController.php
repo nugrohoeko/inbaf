@@ -186,11 +186,7 @@ class AccountController extends Controller
             'current_password' => ['required', 'string', 'max:4096'],
             'password' => [
                 'required', 'string', 'max:72', 'confirmed', Password::min(8)->mixedCase()->letters()->numbers()->symbols(),
-                function (string $attribute, mixed $value, \Closure $fail) {
-                    if (is_string($value) && strlen($value) > 72) {
-                        $fail('Kata sandi baru maksimal 72 byte. Kurangi panjangnya jika menggunakan karakter Unicode.');
-                    }
-                },
+                new \App\Rules\BcryptPassword,
             ],
         ];
     }

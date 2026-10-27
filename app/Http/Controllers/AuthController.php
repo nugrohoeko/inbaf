@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{AuditLog, Competency, ExamPackage, ProficiencyLevel, QuestionType, SystemSetting, TestType, User};
 use Illuminate\Http\Request;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\{Auth, DB, Hash, RateLimiter};
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -31,15 +32,26 @@ class AuthController extends Controller
         $request->merge(['email' => Str::lower((string) $request->input('email'))]);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'], 'email' => ['required', 'email', 'max:254', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => [
+                'required', 'string', 'max:72', 'confirmed', Password::min(8),
+                new \App\Rules\BcryptPassword,
+            ],
             'must_change_password' => ['missing'], 'activation_pending' => ['missing'], 'session_version' => ['missing'], 'deleted_at' => ['missing'],
         ]);
-        $user = DB::transaction(function () use ($data, $request) {
-            $user = User::create(['name' => $data['name'], 'email' => Str::lower($data['email']), 'password' => $data['password'], 'role' => 'participant', 'active' => true]);
-            $user->profile()->create();
-            AuditLog::create(['user_id' => $user->id, 'event' => 'auth.registered', 'ip' => $request->ip()]);
-            return $user;
-        });
+        try {
+            $user = DB::transaction(function () use ($data, $request) {
+                $user = User::create(['name' => $data['name'], 'email' => Str::lower($data['email']), 'password' => $data['password'], 'role' => 'participant', 'active' => true]);
+                $user->profile()->create();
+                AuditLog::create(['user_id' => $user->id, 'event' => 'auth.registered', 'ip' => $request->ip()]);
+                return $user;
+            });
+        } catch (UniqueConstraintViolationException $exception) {
+            // A competing registration may claim the email after validation.
+            // The unique index remains authoritative and the transaction rolls
+            // back every dependent write before returning a normal form error.
+            if (! User::withTrashed()->where('email', $data['email'])->exists()) throw $exception;
+            throw ValidationException::withMessages(['email' => 'Alamat email sudah digunakan.']);
+        }
         Auth::login($user); $request->session()->regenerate();
         $request->session()->put('password_hash_'.Auth::getDefaultDriver(), Auth::guard()->hashPasswordForCookie($user->getAuthPassword()));
         $request->session()->put('user_session_version', (int) ($user->session_version ?? 1));
@@ -74,7 +86,7 @@ class AuthController extends Controller
     {
         $participant = $request->user()->role === 'participant';
         $data = $request->validate([
-            'text_size' => ['required_without:preferred_language', 'string', 'in:normal,large,extra_large'],
+            'text_size' => ['required_without:preferred_language', 'string', 'in:small,normal,large,extra_large'],
             'preferred_language' => $participant ? ['sometimes', 'required_without:text_size', 'string', 'in:id,en'] : ['missing'],
             'must_change_password' => ['missing'], 'activation_pending' => ['missing'], 'session_version' => ['missing'], 'deleted_at' => ['missing'],
         ]);

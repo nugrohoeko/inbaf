@@ -82,7 +82,7 @@ class UserManagementController extends Controller
             'password_method' => [$id ? 'sometimes' : 'required', Rule::in(['manual', 'activation'])],
         ];
         $manual = (! $id && $request->input('password_method') === 'manual') || ($id && $request->filled('password'));
-        $rules['password'] = $manual ? ['required', 'string', 'max:72', 'confirmed', PasswordRule::min(8)->mixedCase()->letters()->numbers()->symbols(), function ($attribute, $value, $fail) { if (strlen($value) > 72) $fail('Kata sandi maksimal 72 byte.'); }] : ['prohibited'];
+        $rules['password'] = $manual ? ['required', 'string', 'max:72', 'confirmed', PasswordRule::min(8)->mixedCase()->letters()->numbers()->symbols(), new \App\Rules\BcryptPassword] : ['prohibited'];
         $rules['password_confirmation'] = $manual ? ['required', 'string'] : ['prohibited'];
         foreach (['id', 'user_id', 'activation_pending', 'must_change_password', 'session_version', 'avatar_path', 'avatar_version', 'deleted_at', 'email_verified_at', 'remember_token', 'active'] as $field) $rules[$field] = ['missing'];
         $data = $request->validate($rules);

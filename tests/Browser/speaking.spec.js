@@ -85,7 +85,9 @@ test('fake microphone speaking pipeline records uploads plays and completes manu
     await player.evaluate(async audio => { await audio.play(); });
     await expect.poll(() => player.evaluate(audio => audio.currentTime)).toBeGreaterThan(0);
     await player.evaluate(audio => audio.pause());
-    await dialog.getByLabel('Overall score (0–100)', {exact: true}).fill('85');
+    await dialog.getByLabel('Clarity (0–100)').fill('85');
+    await dialog.getByRole('button', {name: 'Use weighted score', exact: true}).click();
+    await expect(dialog.getByLabel('Overall score (0–100)', {exact: true})).toHaveValue('85');
     await dialog.getByLabel('Feedback', {exact: true}).fill('Automated QA fixture: recording uploaded, authorized playback succeeded, and review saved.');
     const reviewing = page.waitForResponse(response => /\/api\/admin\/reviews\/\d+$/.test(response.url()) && response.request().method() === 'POST');
     await dialog.getByRole('button', {name: 'Save assessment', exact: true}).click();

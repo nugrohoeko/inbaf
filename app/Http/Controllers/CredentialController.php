@@ -70,9 +70,7 @@ class CredentialController extends Controller
         if ($withPassword) {
             $rules['password'] = [
                 'required', 'string', 'max:72', 'confirmed', PasswordRule::min(8)->mixedCase()->letters()->numbers()->symbols(),
-                function (string $attribute, mixed $value, \Closure $fail) {
-                    if (is_string($value) && strlen($value) > 72) $fail('Kata sandi maksimal 72 byte.');
-                },
+                new \App\Rules\BcryptPassword,
             ];
         }
 

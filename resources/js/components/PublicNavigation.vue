@@ -107,6 +107,7 @@ onBeforeUnmount(() => {
                 <Icon name="BadgeCheck" :size="18"/>
                 {{ label('Verify Certificate', 'Verifikasi Sertifikat') }}
             </a>
+            <a v-if="state.user" href="/dashboard" @click.prevent="navigate('/dashboard')"><Icon name="LayoutDashboard" :size="18"/>Dashboard</a>
         </nav>
         <div class="public-actions">
             <span class="public-control-divider" aria-hidden="true"></span>

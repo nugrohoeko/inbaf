@@ -21,11 +21,22 @@ function createEditor() {
         },
     });
     // Execute the real editor functions while replacing only Vue and network boundaries.
-    vm.runInContext(script + '\nglobalThis.subject = {form, setupPackagePolicy, save};', context, {
+    vm.runInContext(script + '\nglobalThis.subject = {form, setupPackagePolicy, save, normalizeRubric};', context, {
         filename: 'resources/js/components/AdminWorkspace.vue',
     });
     return {editor: context.subject, writes};
 }
+
+test('legacy rubric names, weighted maps and modern criteria remain editable with consistent names', () => {
+    const {editor} = createEditor();
+    const actual = value => JSON.parse(JSON.stringify(editor.normalizeRubric(value)));
+    assert.deepEqual(actual([' Grammar ', 'Vocabulary']), [{name: 'Grammar', weight: 1}, {name: 'Vocabulary', weight: 1}]);
+    assert.deepEqual(actual({' Clarity ': 3, Register: 1}), [{name: 'Clarity', weight: 3}, {name: 'Register', weight: 1}]);
+    const original = [{name: ' Organization ', weight: 2, description: 'Connected ideas'}];
+    assert.deepEqual(actual(original), [{name: 'Organization', weight: 2, description: 'Connected ideas'}]);
+    assert.equal(original[0].name, ' Organization ');
+    assert.deepEqual(actual(null), []);
+});
 
 function packageData(policyOverrides) {
     return {

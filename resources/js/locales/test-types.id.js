@@ -26,6 +26,7 @@
  usageDate:"Tanggal penggunaan",
  usageSnapshotNote:"Setiap penggunaan tercatat pada suatu sesi ujian dan menyimpan versi soal yang digunakan dalam sesi tersebut.",
  textSize:"Ukuran teks",
+ textSmall:"Kecil",
  textNormal:"Normal",
  textLarge:"Besar",
  textExtraLarge:"Sangat Besar",

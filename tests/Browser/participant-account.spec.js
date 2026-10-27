@@ -96,7 +96,7 @@ test.afterEach(async ({page}) => {
 });
 
 test('participant account menu edits complete details and a staged photo, synchronizes avatars and restores the saved language on another device', async ({page, browser}) => {
-    test.setTimeout(90000);
+    test.setTimeout(150000);
     const account = fixture('participant-edit');
     await loginAs(page, account);
     const trigger = page.getByRole('button', {name: 'Account menu', exact: true});

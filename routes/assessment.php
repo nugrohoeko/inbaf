@@ -19,6 +19,7 @@ Route::prefix('api')->group(function () {
             Route::put('/password', [AccountController::class, 'password'])->middleware('throttle:account-password');
         });
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
         Route::get('/dashboard', [ParticipantController::class, 'dashboard']);
         Route::put('/profile', [ParticipantController::class, 'profile'])->middleware('throttle:account-password');
         Route::put('/preferences', [AuthController::class, 'preferences']);

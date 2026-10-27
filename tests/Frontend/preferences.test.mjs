@@ -36,6 +36,9 @@ function createStore(fetch) {
     });
     const executable = source
         .replace(/^import .*;\r?$/gm, '')
+        // The DOM sanitizer is exercised in the browser security suite. This
+        // preference harness only strips its module linkage, like other imports.
+        .replace(/^export \{[^}]+\} from ['"][^'"]+['"];\r?$/gm, '')
         .replace(/\bexport (?=(?:const|let|var|function|async function)\b)/g, '');
     vm.runInContext(executable + '\nglobalThis.subject = {state, applyTextSize, setTextSize, applyLanguage, setLanguage, bootstrap, clearSession, api};', context, {
         filename: 'resources/js/store.js',

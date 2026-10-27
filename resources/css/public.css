@@ -133,6 +133,10 @@
     margin-bottom: 0.5rem;
 }
 
+.auth-form-wrap h1.auth-welcome-title {
+    text-transform: uppercase;
+}
+
 .auth-form-wrap > p {
     font-size: 1.0625rem;
     color: #B5C9BE;

@@ -104,7 +104,7 @@ class AdminController extends Controller
             'questions' => [
                 'code' => ['nullable', 'string', 'max:60', Rule::unique('questions')->ignore($id)],
                 'title' => 'required|string|max:255', 'competency_id' => 'required|exists:competencies,id',
-                'question_group_id' => 'nullable|exists:question_groups,id', 'type' => 'required|exists:question_types,code',
+                'question_group_id' => 'nullable|integer|exists:question_groups,id', 'type' => 'required|exists:question_types,code',
                 'prompt' => 'required|string|max:50000', 'instructions' => 'nullable|string|max:10000',
                 'difficulty' => ['required', Rule::in(['easy', 'medium', 'hard', 'beginner', 'intermediate', 'advanced'])],
                 'weight' => 'required|numeric|min:0.01|max:1000', 'status' => ['required', Rule::in(['draft', 'review', 'active', 'archived'])],
@@ -163,6 +163,7 @@ class AdminController extends Controller
         if ($resource === 'packages') $rules = array_merge($rules, TestTypeController::policyRules('policy_overrides.', true));
         $data = Validator::make($input, $rules)->validate();
         if ($resource === 'questions') {
+            app(ScoringService::class)->validateAnswerShape($data);
             $existing = $id ? Question::findOrFail($id) : null;
             $types = $data['allowed_test_types'] ?? $existing?->allowed_test_types ?? ['certification'];
             $confidential = $data['confidential'] ?? $existing?->confidential ?? false;
@@ -207,7 +208,11 @@ class AdminController extends Controller
 
     private function validateAnswerSchema(array $data): void
     {
-        if (in_array($data['type'], ['essay', 'speaking']) || ($data['metadata']['manual'] ?? false)) return;
+        app(ScoringService::class)->validateAnswerShape($data);
+        if (in_array($data['type'], ['essay', 'speaking']) || ($data['metadata']['manual'] ?? false)) {
+            app(ScoringService::class)->rubric($data);
+            return;
+        }
         $correct = $data['answer_schema']['correct'] ?? null;
         if (($correct === null || $correct === '' || $correct === []) && empty($data['answer_schema']['accepted'])) {
             throw ValidationException::withMessages(['answer_schema' => 'An active objective question needs a correct answer.']);
@@ -259,6 +264,7 @@ class AdminController extends Controller
         if ($resource === 'participants') return app(UserManagementController::class)->legacyWrite($request, $id);
         $data = $this->validateData($request->all(), $resource, $id);
         $model = DB::transaction(function () use ($resource, $id, $data) {
+            if ($resource === 'questions') $this->lockQuestionGroups([$data['question_group_id'] ?? null]);
             $model = $id ? $this->query($resource)->lockForUpdate()->findOrFail($id) : new (self::RESOURCES[$resource]);
             $sections = $data['sections'] ?? null; unset($data['sections']);
             $profile = $data['profile'] ?? null; unset($data['profile']);
@@ -290,8 +296,12 @@ class AdminController extends Controller
     {
         if ($resource === 'participants') return app(UserManagementController::class)->legacyDeactivate(request(), $id);
         abort_unless(in_array($resource, ['questions', 'packages', 'participants', 'competencies', 'groups']), 405);
-        $model = $this->query($resource)->findOrFail($id);
-        DB::transaction(function () use ($resource, $model) {
+        DB::transaction(function () use ($resource, $id) {
+            $model = $this->query($resource)->lockForUpdate()->findOrFail($id);
+            if ($resource === 'groups' && Question::where('question_group_id', $model->id)->exists()) {
+                throw ValidationException::withMessages(['group' => 'This group is still used by questions. Update those questions before removing it.']);
+            }
+            if ($resource === 'questions' && $model->status === 'archived') return;
             match ($resource) {
                 'questions' => $model->update(['status' => 'archived', 'version' => $model->version + 1]),
                 'packages' => $model->update(['published' => false]),
@@ -300,22 +310,41 @@ class AdminController extends Controller
             };
             if ($resource === 'questions') QuestionVersion::create(['question_id' => $model->id, 'version' => $model->version, 'snapshot' => $model->fresh()->toArray()]);
             Audit::record($resource.'.archived', $model);
-        });
+        }, 5);
         return response()->json(['message' => 'Archived successfully.']);
     }
 
     public function duplicate(string $id)
     {
-        $question = Question::findOrFail($id);
-        $copy = DB::transaction(function () use ($question) {
+        $pointer = Question::findOrFail($id);
+        $groupId = $pointer->question_group_id === null ? null : (int) $pointer->question_group_id;
+        $copy = DB::transaction(function () use ($id, $groupId) {
+            // Use the same Group -> Question lock order as ordinary edits. The
+            // initial pointer chooses the parent lock, then the current source
+            // is reloaded and its parent checked before copying any fields.
+            $this->lockQuestionGroups([$groupId]);
+            $question = Question::whereKey($id)->lockForUpdate()->firstOrFail();
+            $currentGroup = $question->question_group_id === null ? null : (int) $question->question_group_id;
+            abort_unless($currentGroup === $groupId, 409, 'This question changed groups. Reload it before duplicating.');
             $copy = $question->replicate();
             $copy->code = 'Q-'.Str::upper(Str::random(10)); $copy->title .= ' (copy)';
             $copy->status = 'draft'; $copy->version = 1; $copy->usage_count = 0; $copy->save();
             QuestionVersion::create(['question_id' => $copy->id, 'version' => 1, 'snapshot' => $copy->toArray()]);
             Audit::record('questions.duplicated', $copy, ['source_id' => $question->id]);
             return $copy;
-        });
+        }, 5);
         return response()->json($copy, 201);
+    }
+
+    /** Hold every referenced parent until all question/version writes commit. */
+    private function lockQuestionGroups(array $ids): void
+    {
+        $ids = collect($ids)->filter(fn ($id) => $id !== null && $id !== '')->map(fn ($id) => (int) $id)->unique()->sort()->values();
+        if ($ids->isEmpty()) return;
+        $groups = QuestionGroup::whereIn('id', $ids->all())->orderBy('id')->lockForUpdate()->get(['id']);
+        if ($groups->count() !== $ids->count()) {
+            throw ValidationException::withMessages(['question_group_id' => 'The selected group is no longer available.']);
+        }
     }
 
     public function bulkQuestions(Request $request)
@@ -335,18 +364,32 @@ class AdminController extends Controller
     public function assess(Request $request, string $id)
     {
         $data = $request->validate(['score' => 'required|numeric|min:0|max:100', 'feedback' => 'required|string|max:10000', 'scores' => 'nullable|array', 'scores.*' => 'numeric|min:0|max:100']);
-        return DB::transaction(function () use ($request, $id, $data) {
-            $answer = ExamAnswer::findOrFail($id);
-            $attempt = ExamAttempt::lockForUpdate()->findOrFail($answer->exam_attempt_id);
-            abort_unless($attempt->status === 'pending_review', 409, 'Only pending attempts can be reviewed.');
+        $attemptId = ExamAnswer::whereKey($id)->value('exam_attempt_id');
+        abort_unless($attemptId, 404);
+        return DB::transaction(function () use ($request, $id, $data, $attemptId) {
+            // Acquire the parent lock before opening a repeatable-read snapshot.
+            // Otherwise a waiting reviewer can miss the preceding assessment.
+            $attempt = ExamAttempt::lockForUpdate()->findOrFail($attemptId);
+            $answer = ExamAnswer::lockForUpdate()->findOrFail($id);
             $question = collect($attempt->snapshot['sections'] ?? [])->flatMap(fn ($s) => $s['questions'] ?? [])->firstWhere('key', $answer->question_key);
             abort_unless($question && (in_array($question['type'], ['essay', 'speaking']) || ($question['metadata']['manual'] ?? false)), 422, 'This answer is scored automatically.');
-            $answer->update(['manual_score' => $data['score'], 'feedback' => $data['feedback']]);
-            ManualAssessment::create(['exam_attempt_id' => $attempt->id, 'exam_answer_id' => $answer->id, 'reviewer_id' => $request->user()->id, 'scores' => $data['scores'] ?? [], 'score' => $data['score'], 'feedback' => $data['feedback']]);
-            Audit::record('answer.assessed', $answer, ['score' => $data['score']]);
+            $scores = array_map('floatval', $data['scores'] ?? []);
+            $existing = $answer->manual_score !== null ? $answer->assessments()->latest('id')->lockForUpdate()->first() : null;
+            if ($answer->manual_score !== null) {
+                abort_unless($existing && $existing->scores == $scores && $existing->feedback === $data['feedback'], 409, 'This answer has already been assessed.');
+            }
+            $score = app(ScoringService::class)->manualScore($question, $scores, (float) $data['score']);
+            if ($answer->manual_score !== null) {
+                abort_unless((float) $existing->score === $score, 409, 'This answer has already been assessed.');
+                return ['message' => 'Assessment already saved.', 'attempt' => $attempt->fresh()];
+            }
+            abort_unless($attempt->status === 'pending_review', 409, 'Only pending attempts can be reviewed.');
+            $answer->update(['manual_score' => $score, 'feedback' => $data['feedback']]);
+            ManualAssessment::create(['exam_attempt_id' => $attempt->id, 'exam_answer_id' => $answer->id, 'reviewer_id' => $request->user()->id, 'scores' => $scores, 'score' => $score, 'feedback' => $data['feedback']]);
+            Audit::record('answer.assessed', $answer, ['score' => $score]);
             app(ScoringService::class)->finalize($attempt);
             return ['message' => 'Assessment saved.', 'attempt' => $attempt->fresh()];
-        });
+        }, 5);
     }
 
     private const SETTING_RULES = [
@@ -507,6 +550,9 @@ class AdminController extends Controller
         fclose($stream);
         if ($errors) throw ValidationException::withMessages($errors);
         DB::transaction(function () use ($rows) {
+            // Validate again under stable parent locks: a group may have been
+            // removed while the uploaded file was being parsed and validated.
+            $this->lockQuestionGroups(array_column($rows, 'question_group_id'));
             foreach ($rows as $data) {
                 $data['code'] = $data['code'] ?: 'Q-'.Str::upper(Str::random(10)); $data['version'] = 1;
                 $question = Question::create($data);

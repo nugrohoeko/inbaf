@@ -24,7 +24,7 @@ class UserPreferencesTest extends TestCase
         $user = User::factory()->create(['role' => 'participant', 'active' => true]);
         $other = User::factory()->create(['text_size' => 'extra_large']);
 
-        foreach (['large', 'extra_large', 'normal'] as $size) {
+        foreach (['small', 'large', 'extra_large', 'normal'] as $size) {
             $this->actingAs($user)->putJson('/api/preferences', [
                 'text_size' => $size, 'user_id' => $other->id, 'role' => 'superadmin',
             ])->assertOk()->assertJsonPath('user.id', $user->id)->assertJsonPath('user.text_size', $size);
@@ -49,13 +49,15 @@ class UserPreferencesTest extends TestCase
     public function test_saved_size_is_restored_by_bootstrap_and_a_new_login(): void
     {
         $user = User::factory()->create(['active' => true]);
-        $this->actingAs($user)->putJson('/api/preferences', ['text_size' => 'extra_large'])->assertOk();
-        $this->getJson('/api/bootstrap')->assertOk()->assertJsonPath('user.text_size', 'extra_large');
-        $this->postJson('/api/logout')->assertOk();
+        foreach (['small', 'extra_large'] as $size) {
+            $this->actingAs($user)->putJson('/api/preferences', ['text_size' => $size])->assertOk();
+            $this->getJson('/api/bootstrap')->assertOk()->assertJsonPath('user.text_size', $size);
+            $this->postJson('/api/logout')->assertOk();
 
-        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password'])
-            ->assertOk()->assertJsonPath('user.text_size', 'extra_large');
-        $this->getJson('/api/bootstrap')->assertOk()->assertJsonPath('user.text_size', 'extra_large');
+            $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password'])
+                ->assertOk()->assertJsonPath('user.text_size', $size);
+            $this->getJson('/api/bootstrap')->assertOk()->assertJsonPath('user.text_size', $size);
+        }
     }
 
     public function test_new_registrations_return_the_normal_default(): void

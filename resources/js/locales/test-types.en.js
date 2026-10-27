@@ -26,6 +26,7 @@
  usageDate:"Used on",
  usageSnapshotNote:"Each recorded use belongs to an assessment attempt and preserves the question version used in that attempt.",
  textSize:"Text size",
+ textSmall:"Small",
  textNormal:"Normal",
  textLarge:"Large",
  textExtraLarge:"Extra Large",

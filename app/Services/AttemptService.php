@@ -15,7 +15,7 @@ class AttemptService
     public function start(User $user, ExamPackage $package, ?string $accessCode = null): ExamAttempt
     {
         return DB::transaction(function () use ($user, $package, $accessCode) {
-            User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             $package = ExamPackage::with(['sections.competency', 'testType'])->findOrFail($package->id);
             if (! $user->active || ! $package->published || ! $package->testType?->active) $this->fail('Paket ujian belum tersedia.');
             $settings = $package->settings ?? [];
@@ -26,7 +26,12 @@ class AttemptService
             if (! empty($settings['access_code']) && ! hash_equals((string) $settings['access_code'], (string) $accessCode)) $this->fail('Kode akses ujian tidak sesuai.');
             if (! empty($settings['starts_at']) && now()->lt(Carbon::parse($settings['starts_at']))) $this->fail('Periode ujian belum dimulai.');
             if (! empty($settings['ends_at']) && now()->gt(Carbon::parse($settings['ends_at']))) $this->fail('Periode ujian telah berakhir.');
-            $existing = ExamAttempt::where('user_id', $user->id)->where('exam_package_id', $package->id)->where('test_type', $package->test_type)->where('status', 'in_progress')->lockForUpdate()->first();
+            // The user lock serializes starts for this account. Locking an absent
+            // secondary-index range would also block other users' inserts in MySQL,
+            // creating a cycle with the shared question locks. Lock only a found PK.
+            $existingId = ExamAttempt::where('user_id', $user->id)->where('exam_package_id', $package->id)->where('test_type', $package->test_type)->where('status', 'in_progress')->value('id');
+            $existing = $existingId ? ExamAttempt::whereKey($existingId)->lockForUpdate()->first() : null;
+            if ($existing && $existing->status !== 'in_progress') $existing = null;
             if ($existing && (! $existing->expires_at || $existing->expires_at->isFuture())) return $existing->load('package');
             if ($existing) $this->submit($existing);
             $count = ExamAttempt::where('user_id', $user->id)->where('exam_package_id', $package->id)->where('test_type', $package->test_type)->count();
@@ -57,7 +62,10 @@ class AttemptService
                 $questions = [];
                 foreach ($records as $question) {
                     if ($question->usage_limit !== null && $question->usage_count >= $question->usage_limit) $this->fail('Batas penggunaan salah satu soal telah tercapai.');
-                    QuestionVersion::firstOrCreate(['question_id' => $question->id, 'version' => $question->version], ['snapshot' => $question->withoutRelations()->toArray()]);
+                    // Use a current locking read: under MySQL REPEATABLE READ an earlier
+                    // ordinary read can retain a snapshot from before another start committed.
+                    $version = QuestionVersion::where('question_id', $question->id)->where('version', $question->version)->lockForUpdate()->first();
+                    if (! $version) QuestionVersion::create(['question_id' => $question->id, 'version' => $question->version, 'snapshot' => $question->withoutRelations()->toArray()]);
                     $data = $question->toArray();
                     $data['key'] = 's'.$section->id.'-q'.$question->id.'-'.Str::lower(Str::random(6));
                     if (! $timed) $data['duration_seconds'] = null;

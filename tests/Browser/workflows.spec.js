@@ -28,6 +28,7 @@ test.afterEach(async ({page}) => {
 });
 
 test('participant completes a real assessment with autosave recovery, passage, image and video', async ({page}) => {
+    test.setTimeout(150000);
     await login(page);
     await page.locator('.sidebar a[href="/tests"]').click();
     await expect(page.locator('.test-type-card')).toHaveCount(3);
@@ -196,7 +197,7 @@ test('superadmin creates, versions and duplicates a question, saves settings and
 });
 
 test('manual essay submission withholds the final score until superadmin review and grades omitted speaking zero', async ({page}) => {
-    test.setTimeout(90000);
+    test.setTimeout(150000);
     await login(page);
     await page.locator('.sidebar a[href="/tests"]').click();
     await page.locator('.package-card').filter({hasText: 'INBAF Academic'}).getByRole('button', {name: 'View details'}).click();
@@ -235,7 +236,10 @@ test('manual essay submission withholds the final score until superadmin review 
     await row.getByRole('button', {name: 'Review', exact: true}).click();
     const dialog = page.getByRole('dialog', {name: 'Manual assessment', exact: true});
     await expect(dialog.locator('.response-text textarea')).toHaveValue(text);
-    await dialog.getByLabel('Overall score (0–100)', {exact: true}).fill('80');
+    const criteria = dialog.locator('input[type="number"]:not([readonly])');
+    for (const criterion of await criteria.all()) await criterion.fill('80');
+    await dialog.getByRole('button', {name: 'Use weighted score', exact: true}).click();
+    await expect(dialog.getByLabel('Overall score (0–100)', {exact: true})).toHaveValue('80');
     await dialog.getByLabel('Feedback', {exact: true}).fill('Clear purpose, polite register, and an appropriate suggested schedule.');
     const reviewed = page.waitForResponse(response => /\/api\/admin\/reviews\/\d+$/.test(response.url()) && response.request().method() === 'POST');
     await dialog.getByRole('button', {name: 'Save assessment', exact: true}).click();

@@ -68,14 +68,14 @@
     <p class="name">{{ $payload['holder_name'] }}</p>
     <p class="description">has successfully completed <strong>{{ $payload['exam_package'] }}</strong><br>and demonstrated the following Indonesian language assessment results.</p>
     <table class="results"><tr>
-        <td><div class="label">Overall score</div><div class="value">{{ number_format($payload['total_score'], 1) }} <span style="font-size:10pt;color:#64748B">/ {{ $payload['score_max'] }}</span></div></td>
+        <td><div class="label">Overall score</div><div class="value">{{ number_format($payload['total_score'], 2) }} <span style="font-size:10pt;color:#64748B">/ {{ $payload['score_max'] }}</span></div></td>
         <td><div class="label">INBAF proficiency level</div><div class="value">{{ $payload['level'] }}</div></td>
         <td><div class="label">Assessment date</div><div style="font-size:13pt;margin-top:2mm">{{ \Carbon\Carbon::parse($payload['test_date'])->format('d F Y') }}</div></td>
     </tr></table>
     @if(count($payload['competency_scores']))
     <table class="competencies">@foreach($competencyRows as $row)<tr>
         @foreach($row as $competency)
-            <td><div class="competency-name">{{ $competency['name'] ?? $competency['code'] ?? 'Competency' }}</div><div class="competency-score">{{ number_format($competency['score'] ?? 0, 1) }}</div></td>
+            <td><div class="competency-name">{{ $competency['name'] ?? $competency['code'] ?? 'Competency' }}</div><div class="competency-score">{{ number_format($competency['score'] ?? 0, 2) }}</div></td>
         @endforeach
     </tr>@endforeach</table>
     @endif

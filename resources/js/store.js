@@ -1,7 +1,7 @@
 import { reactive, computed } from 'vue';
 import en from './locales/en';
 import id from './locales/id';
-const textSizes=['normal','large','extra_large'];
+const textSizes=['small','normal','large','extra_large'];
 function storedTextSize(){try{const value=localStorage.getItem('inbaf-text-size');return textSizes.includes(value)?value:'normal'}catch{return 'normal'}}
 export const state = reactive({user:null,settings:{},competencies:[],levels:[],packages:[],question_types:[],test_types:[],ready:false,path:location.pathname,query:location.search||'',language:localStorage.getItem('inbaf-language')||'en',dark:localStorage.getItem('inbaf-theme')==='dark',textSize:storedTextSize(),textSizeSaving:false,languageSaving:false,notice:'',error:''});
 export function applyTextSize(value){state.textSize=textSizes.includes(value)?value:'normal';document.documentElement.dataset.textSize=state.textSize;try{localStorage.setItem('inbaf-text-size',state.textSize)}catch{}}
@@ -57,7 +57,7 @@ export const admin=computed(()=>state.user?.role==='superadmin');
 export const list=(value)=>Array.isArray(value)?value:Array.isArray(value?.data)?value.data:['packages','results','certificates','questions','items'].map(k=>value?.[k]).find(Array.isArray)||[];
 export const human=(text)=>String(text||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
 export const date=(value)=>value?new Date(value).toLocaleDateString(state.language==='id'?'id-ID':'en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
-export function sanitize(html){const doc=new DOMParser().parseFromString(String(html||''),'text/html');doc.querySelectorAll('script,iframe,object,embed,style,link,meta,form,input,button').forEach(el=>el.remove());doc.querySelectorAll('*').forEach(el=>{[...el.attributes].forEach(a=>{if(a.name.startsWith('on')||!['href','src','alt','title','class','colspan','rowspan'].includes(a.name)||/javascript:|data:text/i.test(a.value))el.removeAttribute(a.name)})});return doc.body.innerHTML}
+export {sanitize} from './security/sanitize';
 
 export const brandLogo=()=>state.settings.logo_media_id?'/api/branding/logo':state.dark?'/brand/logo-dark.svg':'/brand/logo-light.svg';
 

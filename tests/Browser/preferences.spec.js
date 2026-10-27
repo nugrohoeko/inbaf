@@ -5,7 +5,7 @@ test.beforeEach(async ({page}) => {
     await page.addInitScript(() => localStorage.setItem('inbaf-language', 'en'));
 });
 
-for (const [size, pixels] of [['normal', 16], ['large', 18], ['extra_large', 20]]) {
+for (const [size, pixels] of [['small', 14], ['normal', 16], ['large', 18], ['extra_large', 20]]) {
     test(`public navbar hides the size control and preserves saved ${size} typography`, async ({page}) => {
         await page.addInitScript(value => localStorage.setItem('inbaf-text-size', value), size);
         for (const route of ['/', '/login', '/verify']) {
